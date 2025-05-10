@@ -1,0 +1,110 @@
+import sys
+import json
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QListView, QMessageBox
+from PySide6.QtCore import Qt, QAbstractListModel, QModelIndex
+
+# Model to handle contacts
+class ContactsModel(QAbstractListModel):
+    def __init__(self, contacts=None):
+        super().__init__()
+        self.contacts = contacts or []
+
+    def rowCount(self, parent=QModelIndex()):
+        return len(self.contacts)
+
+    def data(self, index, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole and index.isValid():
+            return f"{self.contacts[index.row()]['name']} - {self.contacts[index.row()]['number']} - {self.contacts[index.row()]['email']}"
+        return None
+
+    def add_contact(self, contact):
+        self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
+        self.contacts.append(contact)
+        self.endInsertRows()
+
+    def save_to_file(self, filename):
+        with open(filename, 'w') as file:
+            json.dump(self.contacts, file)
+
+    def load_from_file(self, filename):
+        try:
+            with open(filename, 'r') as file:
+                self.contacts = json.load(file)
+        except FileNotFoundError:
+            self.contacts = []
+
+
+# Controller to manage the interaction between model and view
+class ContactsController:
+    def __init__(self, model):
+        self.model = model
+
+    def add_contact(self, name, number, email):
+        contact = {'name': name, 'number': number, 'email': email}
+        self.model.add_contact(contact)
+        self.model.save_to_file('contacts.json')
+
+
+# View to handle the UI
+class ContactsWindow(QWidget):
+    def __init__(self, controller):
+        super().__init__()
+        self.controller = controller
+        self.setWindowTitle("Contacts Window")
+        self.setGeometry(100, 100, 400, 300)
+
+        layout = QVBoxLayout()
+
+        self.name_input = QLineEdit(self)
+        self.name_input.setPlaceholderText("Name")
+        layout.addWidget(QLabel("Name:"))
+        layout.addWidget(self.name_input)
+
+        self.number_input = QLineEdit(self)
+        self.number_input.setPlaceholderText("Number")
+        layout.addWidget(QLabel("Number:"))
+        layout.addWidget(self.number_input)
+
+        self.email_input = QLineEdit(self)
+        self.email_input.setPlaceholderText("Email")
+        layout.addWidget(QLabel("Email:"))
+        layout.addWidget(self.email_input)
+
+        self.add_button = QPushButton("Add Contact", self)
+        self.add_button.clicked.connect(self.add_contact)
+        layout.addWidget(self.add_button)
+
+        self.contacts_list = QListView(self)
+        layout.addWidget(self.contacts_list)
+        
+        self.model = ContactsModel()
+        self.model.load_from_file('contacts.json')
+        self.contacts_list.setModel(self.model)
+
+        self.setLayout(layout)
+
+    def add_contact(self):
+        name = self.name_input.text()
+        number = self.number_input.text()
+        email = self.email_input.text()
+
+        if name and number and email:
+            self.controller.add_contact(name, number, email)
+            self.name_input.clear()
+            self.number_input.clear()
+            self.email_input.clear()
+        else:
+            QMessageBox.warning(self, "Input Error", "Please fill in all fields.")
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+
+    model = ContactsModel()
+    model.load_from_file('contacts.json')
+    controller = ContactsController(model)
+
+    window = ContactsWindow(controller)
+    window.show()
+
+    sys.exit(app.exec())
