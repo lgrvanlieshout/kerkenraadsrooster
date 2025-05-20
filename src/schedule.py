@@ -14,6 +14,9 @@ from extract_from_xlsx import open_worksheet, extract_availability, extract_serv
 
 
 class Rules(BaseModel):
+    """
+    This class represents the rules by which the schedule must abide.
+    """
     n_persons: int = 6
     role_distribution: dict[str, int] = {
         "ouderling": 3,
@@ -29,10 +32,14 @@ class Rules(BaseModel):
 
 
 class Schedule:
+    """
+    This class represents a schedule.
+    """
     def __init__(self, persons: Persons, start_date: datetime, end_date: datetime,
                  rules=Rules, file_path: str = None):
 
-        self.persons = persons  #TODO: check that persons from excel and provided persons don't clash
+        self.persons = persons
+        #TODO: check that persons from excel and provided persons don't clash
         self.rules = rules
 
         if file_path is not None:
@@ -45,16 +52,22 @@ class Schedule:
             self.services = get_services(church_dates)
             self.availability = self.create_array()
             self.duties = self.create_array()
-            self.value = None
+            self.score = None
 
     def initialize_from_file(self, file_path):
+        """
+        Initializes this class from the given excel file.
+
+        Args:
+            file_path (str): The file path of the excel file.
+        """
         ws = open_worksheet(file_path)
         self.services = extract_services(ws)
         self.availability = extract_availability(ws)
         self.duties = self.create_array()
         self.score = self.schedule_score()
 
-    def create_array(self):
+    def create_array(self) -> np.ndarray:
         """
         Returns a numpy array based on the number of persons and the number
         of services.
@@ -65,21 +78,27 @@ class Schedule:
 
         return np.zeros((n_persons, n_services), dtype=int)
 
-    def schedule_score(self):
-        pass
+    def schedule_score(self) -> float:
+        """
+        Calculates how good a schedule is.
+        """
+        return 0
 
     def __str__(self):
         return str(self.availability)
 
     def to_excel(self):
+        """
+        Creates an excel file containing the data of the schedule.
+        """
         create_excel(self.file_path, self.persons, self.services,
                      self.availability, self.duties)
 
 
 if __name__ == "__main__":
     # Get dates of the schedule
-    start_date = datetime(2025, 5, 24)
-    end_date = datetime(2025, 9, 24)
+    starting_date = datetime(2025, 5, 24)
+    ending_date = datetime(2025, 9, 24)
 
-    schedule = Schedule(kerkenraad, start_date, end_date)
+    schedule = Schedule(kerkenraad, starting_date, ending_date)
     schedule.to_excel()

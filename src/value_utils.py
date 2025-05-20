@@ -15,7 +15,7 @@ from schedule import Rules
 # ----------- Vectors for counting ----------- #
 ################################################
 
-def role_vectors(rules: Rules, persons: dict):
+def get_role_vectors(rules: Rules, persons: dict) -> dict[str, list[int]]:
     # Initialize roles
     roles = {}
 
@@ -30,10 +30,10 @@ def role_vectors(rules: Rules, persons: dict):
 
     return roles
 
-def count_persons_vector(n_persons: int):
+def get_count_persons_vector(n_persons: int) -> list[int]:
     return [1 for _ in range(n_persons)]
 
-def morning_pref_vector(services):
+def get_morning_pref_vector(services) -> list[int]:
     morning_vector = services
     for date, day in services.items():
         if is_special_date(date):
@@ -44,7 +44,7 @@ def morning_pref_vector(services):
 
     return services_to_list(morning_vector)
 
-def evening_pref_vector(services):
+def get_evening_pref_vector(services) -> list[int]:
     evening_vector = services
     for date, day in services.items():
         if is_special_date(date):
@@ -55,7 +55,7 @@ def evening_pref_vector(services):
 
     return services_to_list(evening_vector)
 
-def even_week_vector(services):
+def get_even_week_vector(services) -> list[int]:
     even_week_vector = services
     for date, day in services.items():
         week_number = int(date.strftime("%V"))
@@ -69,7 +69,7 @@ def even_week_vector(services):
 
     return services_to_list(even_week_vector)
 
-def odd_week_vector(services):
+def get_odd_week_vector(services) -> list[int]:
     odd_week_vector = services
     for date, day in services.items():
         week_number = int(date.strftime("%V"))
@@ -83,7 +83,7 @@ def odd_week_vector(services):
 
     return services_to_list(odd_week_vector)
 
-def n_present_vector(services):
+def n_present_vector(services) -> list[int]:
     n_services = len(services_to_list(services))
     # Count how often someone is present
     return [1 for _ in range(n_services)]
@@ -97,10 +97,10 @@ def get_person_stats_counter(rules: Rules, persons: dict) -> np.ndarray:
     n_persons = len(persons)
 
     # Count how many people are present in a service
-    counter_matrix = [count_persons_vector(n_persons)]
+    counter_matrix = [get_count_persons_vector(n_persons)]
 
     # Count how many of each role are present in a service
-    for role_vector in role_vectors(rules, persons).values():
+    for role_vector in get_role_vectors(rules, persons).values():
         counter_matrix.append(role_vector)
 
     return np.array(counter_matrix)
@@ -110,10 +110,10 @@ def get_service_stats_counter(services: dict) -> np.ndarray:
     counter_matrix = [n_present_vector(services)]
 
     # Count how often a preference is denied
-    counter_matrix.append(morning_pref_vector(services))
-    counter_matrix.append(evening_pref_vector(services))
-    counter_matrix.append(even_week_vector(services))
-    counter_matrix.append(odd_week_vector(services))
+    counter_matrix.append(get_morning_pref_vector(services))
+    counter_matrix.append(get_evening_pref_vector(services))
+    counter_matrix.append(get_even_week_vector(services))
+    counter_matrix.append(get_odd_week_vector(services))
 
     return np.array(counter_matrix).T
 
@@ -122,7 +122,7 @@ def get_ideal_person_stats(rules: Rules, n_services: int) -> np.ndarray:
     ideal_person_stats = [rules.n_persons]
 
     # Add ideal role distribution
-    for role, n_required in rules.role_distribution.items():
+    for n_required in rules.role_distribution.values():
         ideal_person_stats.append(n_required)
 
     # Adjust shape for number of services
@@ -177,20 +177,20 @@ def get_score(person_stats_counter: np.ndarray, ideal_person_stats: np.ndarray,
     return score
 
 
-n_services = len(services_to_list(services_dict))
-availability = np.ones((len(kerkenraad), n_services))
+num_services = len(services_to_list(services_dict))
+availability_ = np.ones((len(kerkenraad), num_services))
 
-person_stats_counter = get_person_stats_counter(Rules(), kerkenraad)
+person_stats_counter_ = get_person_stats_counter(Rules(), kerkenraad)
 #print(f"person_stats_counter: {person_stats_counter}")
-service_stats_counter = get_service_stats_counter(services_dict)
+service_stats_counter_ = get_service_stats_counter(services_dict)
 #print(f"service_stats_counter: {service_stats_counter}")
-ideal_person_stats = get_ideal_person_stats(Rules(), n_services)
+ideal_person_stats_ = get_ideal_person_stats(Rules(), num_services)
 #print(f"ideal_person_stats: {ideal_person_stats}")
-ideal_service_stats = get_ideal_service_stats(kerkenraad)
-print(f"ideal_service_stats: {ideal_service_stats}")
+ideal_service_stats_ = get_ideal_service_stats(kerkenraad)
+print(f"ideal_service_stats: {ideal_service_stats_}")
 
 
 
-score = get_score(person_stats_counter, ideal_person_stats,
-                  service_stats_counter, ideal_service_stats,
-                  Rules(), availability)
+schedule_score = get_score(person_stats_counter_, ideal_person_stats_,
+                  service_stats_counter_, ideal_service_stats_,
+                  Rules(), availability_)

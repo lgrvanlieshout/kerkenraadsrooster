@@ -8,7 +8,15 @@ Created on Tue Nov 19 19:14:07 2024
 from datetime import datetime, timedelta
 import itertools
 
-def services_to_list(services):
+def services_to_list(services) -> list:
+    """
+    Converts the dictionary containing the services for each date to a
+    list of services, essentially comprehensing all the values from the
+    dictionary into a single list.
+
+    Args:
+        services (Services): dictionary containing the services per date.
+    """
     return list(itertools.chain.from_iterable(services.values()))
 
 def date_biddag(year: int) -> datetime:
@@ -68,6 +76,7 @@ def date_1e_paasdag(year: int) -> datetime:
 
     Returns:
         date (datetime): The date of Easter Sunday for the given year.
+    
     """
 
     # Step 1: Calculate the "Golden Number" (a 19-year cycle for the Moon's phases)
@@ -240,8 +249,8 @@ def is_special_date(date: datetime) -> bool:
         return False
 
 if __name__ == '__main__':
-    start_date = datetime(2024, 9, 29)
-    end_date = datetime(2025, 1, 22)
-    church_dates = get_church_dates(start_date, end_date)
-    display_dates = [date.strftime("%d-%m-%Y") for date in church_dates]
+    starting_date = datetime(2024, 9, 29)
+    ending_date = datetime(2025, 1, 22)
+    all_church_dates = get_church_dates(starting_date, ending_date)
+    display_dates = [date.strftime("%d-%m-%Y") for date in all_church_dates]
     print(display_dates)

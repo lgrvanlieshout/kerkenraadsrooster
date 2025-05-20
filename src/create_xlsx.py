@@ -5,21 +5,26 @@ Created on Sat Jan  4 10:42:23 2025
 @author: Levi
 """
 
+import os
+
 from datetime import datetime
 from typing import Optional, Dict, List, Literal
 from pydantic import BaseModel, EmailStr
-import os
+
 import numpy as np
 
 import openpyxl
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Font
-from openpyxl.utils.cell import get_column_letter
+from openpyxl.utils.cell import get_column_letter  # pylint: disable=no-name-in-module
 from openpyxl.worksheet.worksheet import Worksheet
 
 from date_utils import get_church_dates, get_services, services_to_list
 
 
 class Person(BaseModel):
+    """
+    This class represents a person in the schedule.
+    """
     ambt: str
     email: Optional[EmailStr] = None
     telnr: Optional[str] = None
@@ -165,7 +170,7 @@ def add_first_col(ws: Worksheet, persons: Persons) -> Worksheet:
         ws.cell(2*(i + 2), 1, persons[name]["telnr"])
 
     # Add closing cell
-    ws.cell(2*(i + 2) + 1, 1, "Aantal kerkenraadsleden:")
+    ws.cell(2*(len(persons) + 1) + 1, 1, "Aantal kerkenraadsleden:")
 
     return ws
 
@@ -297,7 +302,7 @@ def add_num_times_col(ws: Worksheet, persons: Persons, n_services: int) -> Works
     add_header(ws, 1, n_cols + 1, "Aantal keer:", 12)
 
     # Fill the created columns
-    for i, member in enumerate(kerkenraad):
+    for i in range(len(persons)):
         row = (2 * i) + 3
         # Add counting function for total number of times present
         end_col = get_column_letter(n_cols)
@@ -338,11 +343,11 @@ def add_preference_col(ws: Worksheet, persons: Persons, n_services: int) -> Work
     add_header(ws, 1, n_cols + 2, "Voorkeur:", 12.5)
 
     # Fill the created columns
-    for i, member in enumerate(kerkenraad):
+    for i, member in enumerate(persons):
         row = (2 * i) + 3
 
         # Add preference
-        preference = kerkenraad[member]["voorkeur"]
+        preference = persons[member]["voorkeur"]
         if preference == "geen":
             cell = ws.cell(row, n_cols + 2, '')
         else:
@@ -357,7 +362,7 @@ def add_preference_col(ws: Worksheet, persons: Persons, n_services: int) -> Work
             cell.border = Border(top=thin, left=thick, right=thick)
 
         cell = ws.cell(row + 1, n_cols + 2)
-        if i == len(kerkenraad) - 1:
+        if i == len(persons) - 1:
             cell.border = Border(bottom=thick, left=thick, right=thick)
         else:
             cell.border = Border(bottom=thin, left=thick, right=thick)
@@ -377,7 +382,7 @@ def add_counting_row(ws: Worksheet, persons: Persons, n_services: int) -> Worksh
         Worksheet: The updated worksheet.
     """
     ending_col = n_services + 2
-    last_row = 2*len(kerkenraad) + 3
+    last_row = 2*len(persons) + 3
 
     for i in range(2, ending_col):
         col = get_column_letter(i)
@@ -417,7 +422,7 @@ def add_availability(ws: Worksheet, persons: Persons, services: Services,
         availability = np.zeros((len(persons), n_services), dtype=int)
 
     # Check for valid input
-    assert type(availability) == np.ndarray
+    assert isinstance(availability, np.ndarray)
     assert len(persons), n_services == availability.shape
 
     # Loop through all elements
@@ -475,7 +480,7 @@ def add_tasks(ws: Worksheet, persons: Persons, services: Services,
         tasks = np.zeros((len(persons), n_services), dtype=str)
 
     # Check for valid input
-    assert type(tasks) == np.ndarray
+    assert isinstance(tasks, np.ndarray)
     assert len(persons), n_services == tasks.shape
 
     # Loop through all elements
@@ -553,10 +558,10 @@ def add_colors(ws: Worksheet, persons: Persons) -> Worksheet:
 
     # Check whether the number of colors is correct
     if len(colors) < len(persons):
-        raise Exception("The number of colors you provided is smaller than the " +
+        raise ValueError("The number of colors you provided is smaller than the " +
                         "number of members.")
     elif len(colors) > len(persons):
-        raise Exception("The number of colors you provided is greater than the " +
+        raise ValueError("The number of colors you provided is greater than the " +
                         "number of members.")
 
     # Apply colors
@@ -665,8 +670,8 @@ def create_excel(file_path: str, persons: Persons, services: Services,
     add_counting_row(ws, persons, n_services)
 
     # Add availability and tasks
-    add_availability(ws, persons, services)
-    add_tasks(ws, persons, services)
+    add_availability(ws, persons, services, availability)
+    add_tasks(ws, persons, services, tasks)
 
     # Add colors and legend
     add_colors(ws, persons)

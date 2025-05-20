@@ -1,3 +1,4 @@
-pydantic
+pydantic[email]
 numpy
 openpyxl
+openpyxl-stubs

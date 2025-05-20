@@ -5,10 +5,10 @@ Created on Wed Mar 19 20:24:13 2025
 @author: Levi
 """
 
+from typing import List, Dict
 from datetime import datetime
 import numpy as np
 import openpyxl
-from typing import List, Dict
 
 def open_worksheet(file_path):
     """
@@ -146,9 +146,9 @@ def extract_prefs(ws) -> List[str]:
 
 if __name__ == "__main__":
     # Define the file path of the Excel sheet
-    file_path = "test_kerkenraadsrooster.xlsx"
-    ws = open_worksheet(file_path)
+    FILENAME = "test_kerkenraadsrooster.xlsx"
+    worksheet = open_worksheet(FILENAME)
 
-    print(extract_availability(ws))
-    print(extract_services(ws))
-    print(extract_prefs(ws))
+    print(extract_availability(worksheet))
+    print(extract_services(worksheet))
+    print(extract_prefs(worksheet))
